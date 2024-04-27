@@ -36,7 +36,7 @@ webuse lbw
 ***There are two ways to work
 
 *Menus and dialog boxes
-File >>> Example datasets... >>> Example datasets installed with Stata >>> bplong.dta  use | describe 
+//File >>> Example datasets... >>> Example datasets installed with //Stata >>> bplong.dta  use | describe 
 
 *Command window.
 sysuse bplong.dta
@@ -45,6 +45,7 @@ sysuse bplong.dta
 ***Main menu
 *File
 *Edit
+*View
 *Data
 *Graphics
 *Statistics
@@ -53,9 +54,6 @@ sysuse bplong.dta
 *Help
 
 ***Toolbar
-*Open
-*Save
-*Print
 *Log
 *Viewer
 *Graph
