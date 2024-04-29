@@ -97,4 +97,4 @@ collect notes "Data are based on participants with non-missing baseline caregive
 
 * Preview and export to LaTeX
 collect preview
-collect export table1.tex, replace
+collect export output/table1.tex, replace
