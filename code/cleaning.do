@@ -65,3 +65,17 @@ lab var years_care "Years as primary caregiver"
 lab var caring_average "Hours per week in caregiving"
 
 
+
+**# Variables for relationship between outcomes
+* Change in ZBI score
+gen zarit_scoreD = (zarit_score0 - zarit_score2)
+lab var zarit_scoreD "Change in ZBI between baseline and 9 months"
+
+* Change in EQ-VAS score
+gen carer_eq_vas_scoreD = (carer_eq_vas_score0) - (carer_eq_vas_score2)
+lab var carer_eq_vas_scoreD "Change in EQ-VAS between baseline and 9 months"
+
+* Change in EQ-5D index score
+gen carer_eq5d_scoreD = (carer_eq5d_score0) - (carer_eq5d_score2)
+lab var carer_eq5d_scoreD "Change in EQ-5D between baseline and 9 months"
+
