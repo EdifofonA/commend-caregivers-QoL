@@ -1,6 +1,8 @@
 * Drop if missing baseline variables
-keep if !missing(calc_age_c) & !missing(carer_eq5d_score0)
+drop if missing(zarit_score0) | missing(carer_eq_vas_score0) | missing(carer_eq5d_score0)
 
+* Drop one influential observation where EQ-5D score was negative but EQ-VAS score was high
+drop if carer_eq5d_score0 < 0 | carer_eq5d_score0 < 0 | carer_eq5d_score2 < 0
 
 
 **# Clean variables for descriptive statistics
