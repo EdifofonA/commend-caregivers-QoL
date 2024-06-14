@@ -30,8 +30,8 @@ lab values carer_relationship relationship
 
 * Carer relationship with patient
 lab var rel2ppt "Relationship with patient"
-recode rel2ppt (3/7 = 3)
-lab define rel2ppt 1 "Spouse/partner" 2 "Child" 3 "Other family/friend", replace
+recode rel2ppt (1/2 = 1) (3/7 = 2)
+lab define rel2ppt 1 "Spouse/partner/child" 2 "Other family/friend", replace
 
 * Employment status of carer and patient
 gen ppt_employed   = (occ==1 | occ==2) if !missing(occ)
@@ -66,7 +66,8 @@ lab var years_care "Years as primary caregiver"
 * Hours per week spent caregiving
 lab var caring_average "Hours per week in caregiving"
 
-
+* Rate of deterioration
+lab var prebase_det_tert "Rate of deterioration"
 
 **# Variables for relationship between outcomes
 * Change in ZBI score
@@ -80,4 +81,42 @@ lab var carer_eq_vas_scoreD "Change in EQ-VAS between baseline and 9 months"
 * Change in EQ-5D index score
 gen carer_eq5d_scoreD = (carer_eq5d_score0) - (carer_eq5d_score2)
 lab var carer_eq5d_scoreD "Change in EQ-5D between baseline and 9 months"
+
+
+* 
+gen stageBin0 = (stage0==1 | stage0==2) if !missing(stage0)
+gen stageBin1 = (stage1==1 | stage1==2) if !missing(stage1)
+gen stageBin2 = (stage2==1 | stage2==2) if !missing(stage2)
+
+gen zarit_prop0 = zarit_score0/88 if !missing(zarit_score0)
+gen zarit_prop1 = zarit_score1/88 if !missing(zarit_score1)
+gen zarit_prop2 = zarit_score2/88 if !missing(zarit_score2)
+
+gen caring_averageBin = (caring_average>21) if !missing(caring_average)
+
+gen carer_university = (carer_education_lvl>4) if !missing( carer_education_lvl)
+
+* Following Get et al
+gen als_scoreBin0 = (als_score0<=36) if !missing(als_score0)
+gen als_scoreBin1 = (als_score1<=36) if !missing(als_score1)
+gen als_scoreBin2 = (als_score2<=36) if !missing(als_score2)
+
+
+gen mhads_anx_scoreBin0 = (mhads_anx_score0 >= 7) if !missing(mhads_anx_score0)
+gen mhads_anx_scoreBin1 = (mhads_anx_score1 >= 7) if !missing(mhads_anx_score1)
+gen mhads_anx_scoreBin2 = (mhads_anx_score2 >= 7) if !missing(mhads_anx_score2)
+
+* See https://link.springer.com/article/10.1007/s00415-019-09615-3
+gen mhads_dep_scoreBin0 = (mhads_dep_score0 >= 5) if !missing(mhads_dep_score0)
+gen mhads_dep_scoreBin1 = (mhads_dep_score1 >= 5) if !missing(mhads_dep_score1)
+gen mhads_dep_scoreBin2 = (mhads_dep_score2 >= 5) if !missing(mhads_dep_score2)
+
+
+
+/* Useful codes
+
+//dtable, continuous(calc_age_c, statistics(meansd q2 iq)) define(iq = q1 q3, delimiter(", ")) define(meansd = mean sd, delimiter("±")) nformat(%8.1fc) sformat("(IQR: %s)" iq) sformat("%s" sd) nosample  
+
+//dtable, continuous(calc_age_c years_care caring_average, statistics(iq2 q2)) factor(carer_female carer_relationship carer_employed rel2ppt) define(iq2 = mean sd) nosample nformat(%8.1fc) sformat("(%s);" sd) sformat("Median-%s" q2) 
+
 
