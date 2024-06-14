@@ -30,7 +30,7 @@ collect style cell result[mean sd], nformat(%8.1fc)
 collect label levels result _dtable_stats "Mean (SD) or n (%)", modify
 
 * Hide levels of indicator variables
-collect style header ppt_otherDx ppt_female ppt_employed relationship carer_female carer_employed carer_relationship, level(hide)
+collect style header oth_phys_yn oth_mental_yn ppt_female ppt_employed relationship carer_female carer_employed carer_relationship, level(hide)
 
 * Add sample sizes
 collect label levels collection Patients "Patients, N=85" Caregivers "Caregivers, N=85", modify
@@ -63,7 +63,7 @@ graph bar zarit_score0 if stage2 !=5, over(stage2) name(C3, replace) ytitle(ZBI 
 
 * Combined
 graph combine A1 B1 C1 A2 B2 C2 A3 B3 C3, rows(3) xsize(8) ysize(6) iscale(0.6) imargin(0 3 1 1)
-graph export output/outcome-kings-stage.png, width(8000) height(6000) replace
+graph export output/figures/outcome-kings-stage.png, width(8000) height(6000) replace
 }
 
 
@@ -106,8 +106,11 @@ foreach var of varlist zarit_score carer_eq5d_score carer_eq_vas_score carer_mob
 * Using pooled data
 capture frame change long // change to long frame
 pwcorr als_score carer_eq5d_score, sig obs
+// coef  0.216; pvalue 0.002
 pwcorr als_score carer_eq_vas_score, sig obs
+// coef  0.043; pvalue 0.535
 pwcorr als_score zarit_score, sig obs
+// coef -0.208; pvalue 0.002
 
 * Using baseline data
 capture frame change default // return to default frame
