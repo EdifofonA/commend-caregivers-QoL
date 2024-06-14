@@ -23,7 +23,8 @@ lab var calc_age_c "Age in years"
 recode relationship (1 4 5 = 0) (2 3 = 1) 
 recode carer_relationship (1 4 5 = 0) (2 3 = 1) 
 
-lab var carer_relationship "Marital status"
+lab var relationship "Married or in partnership"
+lab var carer_relationship "Married or in partnership"
 
 lab define relationship 1 "Married or in partnership" 0 "Single or previously married", replace
 lab values carer_relationship relationship
@@ -46,7 +47,7 @@ lab values ppt_employed carer_employed yesno
 gen ppt_otherDx = (oth_phys_yn==1 | oth_mental_yn==1)  if !missing(oth_phys_yn, oth_mental_yn)
 
 label values ppt_otherDx yesno
-lab var ppt_otherDx "Patient with comorbidity"
+lab var ppt_otherDx "Patient has comorbidity"
 
 * Number of comorbidities in patient
 egen temp = concat(oth_phys_spcfy oth_mental_spcfy) if (oth_phys_yn==1 | oth_mental_yn==1), punct(,) // combine physical and mental comorbidity variables
@@ -54,6 +55,8 @@ replace temp = subinstr(temp, ",,", ",",.)  // remove double commas
 gen ppt_numDx = length(temp) - length(subinstr(temp, ",", "", .)) // counts
 drop temp // drop temporary variable created
 lab var ppt_numDx "Number of comorbidities"
+lab var oth_mental_yn "Other mental condition"
+lab var oth_phys_yn   "Other physical condition"
 
 * Years since diagnosis for patient
 gen years_diag = time_s_diag_mn / 12
@@ -82,6 +85,26 @@ lab var carer_eq_vas_scoreD "Change in EQ-VAS between baseline and 9 months"
 gen carer_eq5d_scoreD = (carer_eq5d_score0) - (carer_eq5d_score2)
 lab var carer_eq5d_scoreD "Change in EQ-5D between baseline and 9 months"
 
+* ALSFRS scores
+lab var als_score0 "ALSFRS-R score (0–48)"
+lab var als_score1 "ALSFRS-R score (0–48)"
+lab var als_score2 "ALSFRS-R score (0–48)"
+
+lab var carer_eq_vas_score0 "EQ-VAS score (0–100)"
+lab var carer_eq_vas_score1 "EQ-VAS score (0–100)"
+lab var carer_eq_vas_score2 "EQ-VAS score (0–100)"
+
+lab var carer_eq5d_score0 "EQ-5D index score (0–1)"
+lab var carer_eq5d_score1 "EQ-5D index score (0–1)"
+lab var carer_eq5d_score2 "EQ-5D index score (0–1)"
+
+lab var zarit_score0 "ZBI score (0–88)"
+lab var zarit_score1 "ZBI score (0–88)"
+lab var zarit_score2 "ZBI score (0–88)"
+
+lab var stage0 "King's stage"
+lab var stage1 "King's stage"
+lab var stage2 "King's stage"
 
 * 
 gen stageBin0 = (stage0==1 | stage0==2) if !missing(stage0)
@@ -120,3 +143,48 @@ gen mhads_dep_scoreBin2 = (mhads_dep_score2 >= 5) if !missing(mhads_dep_score2)
 //dtable, continuous(calc_age_c years_care caring_average, statistics(iq2 q2)) factor(carer_female carer_relationship carer_employed rel2ppt) define(iq2 = mean sd) nosample nformat(%8.1fc) sformat("(%s);" sd) sformat("Median-%s" q2) 
 
 
+**# T-tests
+* ZBI score: Baseline to 6 months
+collect clear
+quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_6mo=r(mu_2) sd_6mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest zarit_score0 == zarit_score1 //if !missing(zarit_score0) & !missing(zarit_score1) & !missing(zarit_score2) 
+collect layout () (result[mean_base sd_base mean_6mo sd_6mo diff pvalue])
+
+* ZBI score: 6 months to 9 months
+collect clear
+quietly: collect mean_6mo=r(mu_1) sd_6mo=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest zarit_score1 == zarit_score2 
+collect layout () (result[mean_6mo sd_6mo mean_9mo sd_9mo diff pvalue])
+
+* ZBI score: Baseline to 9 months
+collect clear
+quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest zarit_score0 == zarit_score2
+collect layout () (result[mean_base sd_base mean_9mo sd_9mo diff pvalue])
+
+* EQ-VAS: Baseline to 6 months
+collect clear
+quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_6mo=r(mu_2) sd_6mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq_vas_score0 == carer_eq_vas_score1
+collect layout () (result[mean_base sd_base mean_6mo sd_6mo diff pvalue])
+
+* EQ-VAS: 6 months to 9 months
+collect clear
+quietly: collect mean_6mo=r(mu_1) sd_6mo=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq_vas_score1 == carer_eq_vas_score2
+collect layout () (result[mean_6mo mean_9mo diff pvalue])
+
+* EQ-VAS: Baseline to 9 months
+collect clear
+quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq_vas_score0 == carer_eq_vas_score2
+collect layout () (result[mean_base mean_9mo diff pvalue])
+
+* EQ-5D: Baseline to 6 months
+collect clear
+quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_6mo=r(mu_2) sd_6mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq5d_score0 == carer_eq5d_score1
+collect layout () (result[mean_base mean_6mo diff pvalue])
+
+* EQ-5D: 6 months to 9 months
+collect clear
+quietly: collect mean_6mo=r(mu_1) sd_6mo=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq5d_score1 == carer_eq5d_score2
+collect layout () (result[mean_6mo mean_9mo diff pvalue])
+
+* EQ-5D: Baseline to 9 months
+collect clear
+quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq5d_score0 == carer_eq5d_score2
+collect layout () (result[mean_base mean_9mo diff pvalue])
