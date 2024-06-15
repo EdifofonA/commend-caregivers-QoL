@@ -67,6 +67,23 @@ graph export output/figures/outcome-kings-stage.png, width(8000) height(6000) re
 }
 
 
+**# T-tests
+* ZBI score
+ttest zarit_score0 == zarit_score1 //Base vs 6mo
+ttest zarit_score1 == zarit_score2 //6mo vs 9mo
+ttest zarit_score0 == zarit_score2 //Base vs 9mo
+
+* EQ-VAS
+ttest carer_eq_vas_score0 == carer_eq_vas_score1 //Base vs 6mo
+ttest carer_eq_vas_score1 == carer_eq_vas_score2 //6mo vs 9mo
+ttest carer_eq_vas_score0 == carer_eq_vas_score2 //Base vs 9mo
+
+* EQ-5D
+ttest carer_eq5d_score0 == carer_eq5d_score1 //Base vs 6mo
+ttest carer_eq5d_score1 == carer_eq5d_score2 //6mo vs 9mo
+ttest carer_eq5d_score0 == carer_eq5d_score2 //Base vs 9mo
+
+
 **# Pooled carer scores by patient's functional status
 
 * First, create another data frame for long data
@@ -93,6 +110,62 @@ tabstat zarit_score carer_eq_vas_score ///
 carer_eq5d_score carer_mobility carer_self_care ///
 carer_usual_activ carer_pain carer_anxiety if stage!=5, ///
 by(stage) stat(mean sd) nototal format(%8.3fc)
+
+
+
+**# Pooled carer scores by patient's functional status
+
+* First, create another data frame for long data
+capture frame create catplot
+capture frame change catplot // change to long frame
+
+* reshape data to long format
+quietly{
+	use "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/commend_master240405.dta", clear
+  do "code/kingstage.do"
+	do "code/cleaning.do"
+	reshape long carer_mobility carer_self_care ///
+	carer_usual_activ carer_pain carer_anxiety, ///
+	i(screening) j(time)
+	keep time carer_mobility carer_self_care /// 
+	carer_usual_activ carer_pain carer_anxiety time
+	lab define TIMEPOINT 0 "Baseline" 1 "6 months" 2 "9 months"
+	lab values time TIMEPOINT
+}
+	
+rename carer_mobility score1
+rename carer_self_care score2
+rename carer_usual_activ score3
+rename carer_pain score4
+rename carer_anxiety score5
+
+keep if !missing(score1-score5)
+gen id = _n
+reshape long score, i(id) j(domain)
+lab define DOMAIN 1 "MO" 2 "SC" 3 "UA" 4 "PD" 5 "AD"
+lab values domain DOMAIN
+
+drop id
+decode time, gen(timepoint) 
+egen category = concat(domain timepoint), punct(" ")
+
+//ssc install catplot
+catplot score, l1title("") ///
+over(timepoint, gap(20) label(labgap(1) labsize(*0.7)) sort(2)) ///
+over(domain, label(labgap(1) labsize(*0.7) angle(90)) ) ///
+stack asyvars perc(category) ytitle("") ylabel(, labsize(small)) ///
+legend(label(1 "No problems") label(2 "Slight problems") label(3 "Moderate problems") label(4 "Severe problems") label(5 "Extreme problems") cols(5) keygap(0.5) symxsize(2) size(*0.6) pos(1) bmargin(none)) ///
+ysize(9) xsize(12) plotregion(margin(1 1 1 1)) graphregion(margin(1 3 0 1)) ///
+bar(4, fcolor(brown) lcolor(black) lwidth(0.1)) ///
+bar(3, fcolor(brown%60) lcolor(black) lwidth(0.1)) ///
+bar(2, fcolor(khaki%50) lcolor(black) lwidth(0.1)) ///
+bar(1, fcolor(khaki%20) lcolor(black) lwidth(0.1))
+
+graph export output/figures/eq5d-domains-time.png, width(6000) height(4500) replace
+
+
+
+
 
 * ANOVA statistics for carer scores by King's stage
 foreach var of varlist zarit_score carer_eq5d_score carer_eq_vas_score carer_mobility carer_self_care carer_usual_activ carer_pain carer_anxiety {
