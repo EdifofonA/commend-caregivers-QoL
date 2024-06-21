@@ -1,24 +1,23 @@
-/*
-Using ALSFRS-R to assign King's stage as this is what Paul's model used  
-Also used Al Chalabi presentation on ENCALS training saved as Kings-Clinical-Staging-Presentation_PT.pdf
-Al Chalabi used Stages 4a and 4b and I have used 4a and 4b as Stage 4
-Algorithm main reference Reference Balendra 2014 
- The algorithm used to calculate clinical stage from ALSFRS-R was as follows:
-1. If a patient dropped any points on any of the three ALSFRS-R questions regarding speech (question 1), salivation (question 2) or swallowing
-(question 3), then the bulbar region was considered involved.
-2. If a patient dropped any points on either of the two ALSFRS-R questions regarding hand function,
-which are handwriting (question 4) and ability to cut food and handle utensils (question 5A), then the upper limb region was considered
-involved.
-3. If a patient dropped any points on the ALSFRS-R question regarding ability to walk (question 8), then the lower limb region was
-considered involved.
-4. Question 5B on the ALSFRS-R is used to assess ability to manipulate fastenings if a patient has
-a gastrostomy. Therefore, if this question had been answered, rather than question 5A, which is only answered by patients without a gastrostomy,
-then Stage 4A had been reached.
-5. Question 10 of the ALSFRS-R relates to dyspnoea and scoring 0 on this question indicates
-that a patient has signifi cant difficulty with dyspnoea and is considering using mechanical respiratory support. Question 12 of the ALSFRS-
-R relates to the use of Bi-level Positive Airway Pressure (BiPAP) ventilation and dropping any points on this question indicates that BiPAP is being used. 
-Therefore, if a patient scored 0 points on question 10 or less than 4 points on question 12 this indicated that Stage 4B had been reached.
-*/
+quietly{
+// Using ALSFRS-R to assign King's stage as this is what Paul's model used  
+// Also used Al Chalabi presentation on ENCALS training saved as Kings-Clinical-Staging-Presentation_PT.pdf
+// Al Chalabi used Stages 4a and 4b and I have used 4a and 4b as Stage 4
+// Algorithm main reference Reference Balendra 2014 
+//  The algorithm used to calculate clinical stage from ALSFRS-R was as follows:
+// 1. If a patient dropped any points on any of the three ALSFRS-R questions regarding speech (question 1), salivation (question 2) or swallowing
+// (question 3), then the bulbar region was considered involved.
+// 2. If a patient dropped any points on either of the two ALSFRS-R questions regarding hand function,
+// which are handwriting (question 4) and ability to cut food and handle utensils (question 5A), then the upper limb region was considered
+// involved.
+// 3. If a patient dropped any points on the ALSFRS-R question regarding ability to walk (question 8), then the lower limb region was
+// considered involved.
+// 4. Question 5B on the ALSFRS-R is used to assess ability to manipulate fastenings if a patient has
+// a gastrostomy. Therefore, if this question had been answered, rather than question 5A, which is only answered by patients without a gastrostomy,
+// then Stage 4A had been reached.
+// 5. Question 10 of the ALSFRS-R relates to dyspnoea and scoring 0 on this question indicates
+// that a patient has signifi cant difficulty with dyspnoea and is considering using mechanical respiratory support. Question 12 of the ALSFRS-
+// R relates to the use of Bi-level Positive Airway Pressure (BiPAP) ventilation and dropping any points on this question indicates that BiPAP is being used. 
+// Therefore, if a patient scored 0 points on question 10 or less than 4 points on question 12 this indicated that Stage 4B had been reached.
 
 ** Baseline 
 ** At baseline there are 2 people who do not drop any point and they have not been assigned any stage.
@@ -122,3 +121,4 @@ replace stage2 = 4 if alsfrs_5b_peg2 !=.
 ** Need to account for death 
 replace stage2 = 5 if discon_stage == 3 & discon_rsn == 2 & comp_date2 == .
 
+}

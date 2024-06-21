@@ -1,33 +1,25 @@
-* Drop if missing baseline variables
-drop if missing(zarit_score0) | missing(carer_eq_vas_score0) | missing(carer_eq5d_score0)
-
-* Drop one influential observation where EQ-5D score was negative but EQ-VAS score was high
-drop if carer_eq5d_score0 < 0 | carer_eq5d_score0 < 0 | carer_eq5d_score2 < 0
-
-
+quietly{
 **# Clean variables for descriptive statistics
 lab define yesno 1 "Yes" 0 "No", replace
 
 * Generate indicator variable for female sex
 gen ppt_female   = ppt_sex==2 if !missing(ppt_sex)
 gen carer_female = carer_sex==2 if !missing(carer_sex)
-lab var ppt_female   "Female sex"
-lab var carer_female "Female sex"
+lab var ppt_female   "Female sex (patient)"
+lab var carer_female "Female sex (caregiver)"
 label values ppt_female carer_female yesno
 
 * Age of carer and patient
-lab var calc_age_p "Age in years"
-lab var calc_age_c "Age in years"
+lab var calc_age_p "Patient's age in years"
+lab var calc_age_c "Caregiver's age in years"
 
 * Marital status of carer and patient
 recode relationship (1 4 5 = 0) (2 3 = 1) 
 recode carer_relationship (1 4 5 = 0) (2 3 = 1) 
 
-lab var relationship "Married or in partnership"
-lab var carer_relationship "Married or in partnership"
-
-lab define relationship 1 "Married or in partnership" 0 "Single or previously married", replace
-lab values carer_relationship relationship
+lab var relationship "Patient is married/partnership"
+lab var carer_relationship "Caregiver is married/partnership"
+lab values carer_relationship yesno
 
 * Carer relationship with patient
 lab var rel2ppt "Relationship with patient"
@@ -38,25 +30,44 @@ lab define rel2ppt 1 "Spouse/partner/child" 2 "Other family/friend", replace
 gen ppt_employed   = (occ==1 | occ==2) if !missing(occ)
 gen carer_employed = (carer_occ==1 | carer_occ==2) if !missing(carer_occ)
 
-lab var ppt_employed   "In paid employment"
-lab var carer_employed "In paid employment"
+lab var ppt_employed   "Patient in paid employment"
+lab var carer_employed "Caregiver in paid employment"
 
 lab values ppt_employed carer_employed yesno
 
 * Comorbidity in patient
-gen ppt_otherDx = (oth_phys_yn==1 | oth_mental_yn==1)  if !missing(oth_phys_yn, oth_mental_yn)
+gen oth_anydx_yn = (oth_phys_yn==1 | oth_mental_yn==1)  if !missing(oth_phys_yn, oth_mental_yn)
 
-label values ppt_otherDx yesno
-lab var ppt_otherDx "Patient has comorbidity"
+label values oth_anydx_yn yesno
+
+lab var oth_anydx_yn   "Patient comorbidity (any)"
+lab var oth_phys_yn    "Patient comorbidity (physical)"
+lab var oth_mental_yn  "Patient comorbidity (mental)"
 
 * Number of comorbidities in patient
 egen temp = concat(oth_phys_spcfy oth_mental_spcfy) if (oth_phys_yn==1 | oth_mental_yn==1), punct(,) // combine physical and mental comorbidity variables
 replace temp = subinstr(temp, ",,", ",",.)  // remove double commas
-gen ppt_numDx = length(temp) - length(subinstr(temp, ",", "", .)) // counts
+replace temp = subinstr(temp, ".,", ",",.)  // remove double commas
+
+gen ppt_numdx = length(temp) - length(subinstr(temp, ",", "", .)) // counts
+replace ppt_numdx = 2 in 8
+replace ppt_numdx = 2 in 15
+replace ppt_numdx = 3 in 25
+replace ppt_numdx = 3 in 27
+replace ppt_numdx = 2 in 50
+replace ppt_numdx = 2 in 54
+replace ppt_numdx = 2 in 58
+replace ppt_numdx = 3 in 84
+replace ppt_numdx = 2 in 103
+replace ppt_numdx = 2 in 126
+replace ppt_numdx = 3 in 131
+replace ppt_numdx = 2 in 141
+replace ppt_numdx = 2 in 173
+replace ppt_numdx = 2 in 174
+replace ppt_numdx = 2 in 181
+
 drop temp // drop temporary variable created
-lab var ppt_numDx "Number of comorbidities"
-lab var oth_mental_yn "Other mental condition"
-lab var oth_phys_yn   "Other physical condition"
+lab var ppt_numdx "Number of comorbidities"
 
 * Years since diagnosis for patient
 gen years_diag = time_s_diag_mn / 12
@@ -117,13 +128,14 @@ gen zarit_prop2 = zarit_score2/88 if !missing(zarit_score2)
 
 gen caring_averageBin = (caring_average>21) if !missing(caring_average)
 
+* University degree
 gen carer_university = (carer_education_lvl>4) if !missing( carer_education_lvl)
+lab var carer_university "Caregiver has university degree"
 
 * Following Get et al
 gen als_scoreBin0 = (als_score0<=36) if !missing(als_score0)
 gen als_scoreBin1 = (als_score1<=36) if !missing(als_score1)
 gen als_scoreBin2 = (als_score2<=36) if !missing(als_score2)
-
 
 gen mhads_anx_scoreBin0 = (mhads_anx_score0 >= 7) if !missing(mhads_anx_score0)
 gen mhads_anx_scoreBin1 = (mhads_anx_score1 >= 7) if !missing(mhads_anx_score1)
@@ -136,55 +148,66 @@ gen mhads_dep_scoreBin2 = (mhads_dep_score2 >= 5) if !missing(mhads_dep_score2)
 
 
 
-/* Useful codes
+* Drop if missing baseline variables
+drop if missing(zarit_score0) | missing(carer_eq_vas_score0) | missing(carer_eq5d_score0)
 
-//dtable, continuous(calc_age_c, statistics(meansd q2 iq)) define(iq = q1 q3, delimiter(", ")) define(meansd = mean sd, delimiter("±")) nformat(%8.1fc) sformat("(IQR: %s)" iq) sformat("%s" sd) nosample  
+* Drop one influential observation where EQ-5D score was negative but EQ-VAS score was high
+drop if carer_eq5d_score0 < 0 | carer_eq5d_score0 < 0 | carer_eq5d_score2 < 0
 
-//dtable, continuous(calc_age_c years_care caring_average, statistics(iq2 q2)) factor(carer_female carer_relationship carer_employed rel2ppt) define(iq2 = mean sd) nosample nformat(%8.1fc) sformat("(%s);" sd) sformat("Median-%s" q2) 
 
 
-**# T-tests
-* ZBI score: Baseline to 6 months
-collect clear
-quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_6mo=r(mu_2) sd_6mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest zarit_score0 == zarit_score1 //if !missing(zarit_score0) & !missing(zarit_score1) & !missing(zarit_score2) 
-collect layout () (result[mean_base sd_base mean_6mo sd_6mo diff pvalue])
 
-* ZBI score: 6 months to 9 months
-collect clear
-quietly: collect mean_6mo=r(mu_1) sd_6mo=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest zarit_score1 == zarit_score2 
-collect layout () (result[mean_6mo sd_6mo mean_9mo sd_9mo diff pvalue])
+**# Create pooledLong frame (long data format)
 
-* ZBI score: Baseline to 9 months
-collect clear
-quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest zarit_score0 == zarit_score2
-collect layout () (result[mean_base sd_base mean_9mo sd_9mo diff pvalue])
+* Copy the default frame into a new frame
+frame copy default pooledLong
+frame change pooledLong
 
-* EQ-VAS: Baseline to 6 months
-collect clear
-quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_6mo=r(mu_2) sd_6mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq_vas_score0 == carer_eq_vas_score1
-collect layout () (result[mean_base sd_base mean_6mo sd_6mo diff pvalue])
+* Reshape data from wide to long format
+reshape long zarit_score carer_eq_vas_score carer_eq5d_score carer_mobility carer_self_care carer_usual_activ carer_pain carer_anxiety stage stageBin als_score als_scoreBin zarit_prop mq_psychol_score mq_exist_score mhads_anx_score mhads_anx_scoreBin  mhads_dep_score mhads_dep_scoreBin participant_eq_vas_score participant_eq5d_score participant_mobility participant_self_care participant_usual_activ participant_pain participant_anxiety, i(screening) j(timepoint)
 
-* EQ-VAS: 6 months to 9 months
-collect clear
-quietly: collect mean_6mo=r(mu_1) sd_6mo=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq_vas_score1 == carer_eq_vas_score2
-collect layout () (result[mean_6mo mean_9mo diff pvalue])
+* Rename variables
+lab var carer_mobility    "Carer EQ-5D mobility"
+lab var carer_self_care   "Carer EQ-5D self-care"
+lab var carer_usual_activ "Carer EQ-5D usual activity"
+lab var carer_pain        "Carer EQ-5D pain/discomfort"
+lab var carer_anxiety     "Carer EQ-5D anxiety/depression"
+lab var zarit_score       "ZBI score (0-88)"
+lab var zarit_prop        "ZBI score scaled (0-1)"
+lab var carer_eq5d_score  "Carer EQ-5D index score"
+lab var als_score         "ALSFRS-Revised (0–48)"
+lab var mq_psychol_score  "MQOL psychological (0–10)"
+lab var mq_exist_score    "MQOL existential (0–10)"
+lab var mhads_anx_score   "Modified-HADS anxiety (0–18)"
+lab var mhads_dep_score   "Modified-HADS depression (0–18)"
 
-* EQ-VAS: Baseline to 9 months
-collect clear
-quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq_vas_score0 == carer_eq_vas_score2
-collect layout () (result[mean_base mean_9mo diff pvalue])
+lab var participant_mobility    "Patient EQ-5D mobility"
+lab var participant_self_care   "Patient EQ-5D self-care"
+lab var participant_usual_activ "Patient EQ-5D usual activity"
+lab var participant_pain        "Patient EQ-5D pain/discomfort"
+lab var participant_anxiety     "Patient EQ-5D anxiety/depression"
+lab var participant_eq5d_score  "Patient EQ-5D index score"
 
-* EQ-5D: Baseline to 6 months
-collect clear
-quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_6mo=r(mu_2) sd_6mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq5d_score0 == carer_eq5d_score1
-collect layout () (result[mean_base mean_6mo diff pvalue])
+gen carer_eq5d_100       = carer_eq5d_score * 100
+lab var carer_eq5d_100  "Carer EQ-5D index (x 100)"
 
-* EQ-5D: 6 months to 9 months
-collect clear
-quietly: collect mean_6mo=r(mu_1) sd_6mo=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq5d_score1 == carer_eq5d_score2
-collect layout () (result[mean_6mo mean_9mo diff pvalue])
+gen participant_eq5d_100 = participant_eq5d_score * 100
+lab var participant_eq5d_100  "Patient EQ-5D index (x 100)"
 
-* EQ-5D: Baseline to 9 months
-collect clear
-quietly: collect mean_base=r(mu_1) sd_base=r(sd_1) mean_9mo=r(mu_2) sd_9mo=r(sd_2) diff=r(mu_1)-r(mu_2) pvalue=r(p): ttest carer_eq5d_score0 == carer_eq5d_score2
-collect layout () (result[mean_base mean_9mo diff pvalue])
+**# Create catplotLong frame (long data format)
+
+* Copy the default frame into a new frame
+frame copy default catplotLong
+frame change catplotLong
+
+* Reshape data from wide to long format
+reshape long carer_mobility carer_self_care carer_usual_activ carer_pain carer_anxiety, i(screening) j(time)
+
+* Keep only needed variables
+keep time carer_mobility carer_self_care carer_usual_activ carer_pain carer_anxiety time
+lab define TIMEPOINT 0 "Baseline" 1 "6 months" 2 "9 months"
+lab values time TIMEPOINT
+
+
+frame change default
+}
