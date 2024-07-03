@@ -1,2 +1,18 @@
+# Cache directories
+*_cache/
+/cache/
 
+# MacBook
 .DS_Store
+
+#Other folders
+resources/
+presentations/
+
+
+# Word files
+*.docx
+
+# Other files
+*.pptx
+*.tex

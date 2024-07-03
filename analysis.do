@@ -7,8 +7,6 @@ cls
 * Load dataset (from "data" subfolder)
 use "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/commend_master240405.dta"
 capture drop _merge
-merge 1:1 screening using "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/commend_master240405 id with resource use data.dta"
-capture drop _merge
 
 * Create king stages
 do "code/kingstage.do"
@@ -22,10 +20,10 @@ frame change default //using the default frame
 
 quietly{
 * For caregivers
-dtable calc_age_c 1.carer_female 1.carer_relationship 1.carer_employed i.rel2ppt years_care caring_average carer_eq_vas_score0 carer_eq5d_score0 zarit_score0, nosample name(Caregivers) replace // nosample prevents sample frequency statistic
+dtable calc_age_c 1.carer_female 1.carer_relationship 1.carer_employed i.rel2pptCat years_care caring_average carer_eq_vas_score0 carer_eq5d_score0 zarit_score0, nosample name(Caregivers) replace // nosample prevents sample frequency statistic
 
 * For patients
-dtable calc_age_p 1.ppt_female 1.relationship 1.ppt_employed 1.oth_phys_yn 1.oth_mental_yn ppt_numdx years_diag als_score0 i.stage0, nosample name(Patients) replace // nosample prevents sample frequency statistic
+dtable calc_age_p 1.ppt_female 1.relationship 1.ppt_employed 1.oth_anydx_yn ppt_numdx years_diag als_score0 i.stage0 mq_psychol_score0 mq_exist_score0 mhads_anx_score0 mhads_dep_score0, nosample name(Patients) replace // nosample prevents sample frequency statistic
 
 * Combine the two tables
 collect combine table1 = Patients Caregivers, replace
@@ -36,7 +34,7 @@ collect style cell result[mean sd], nformat(%8.1fc)
 collect label levels result _dtable_stats "Mean (SD) or n (%)", modify
 
 * Hide levels of indicator variables
-collect style header oth_phys_yn oth_mental_yn ppt_female ppt_employed relationship carer_female carer_employed carer_relationship, level(hide)
+collect style header oth_anydx_yn ppt_female ppt_employed relationship carer_female carer_employed carer_relationship, level(hide)
 
 * Add sample sizes
 collect label levels collection Patients "Patients, N=85" Caregivers "Caregivers, N=85", modify
@@ -74,7 +72,45 @@ graph bar zarit_score0 if stage2 !=5, over(stage2) name(C3, replace) ytitle(ZBI 
 }
 
 
-**# T-tests
+
+capture frame change default //using the default frame
+
+quietly{
+
+set scheme stmono2
+
+* EQ-5D
+twoway (scatter carer_eq5d_score0 als_score0, name(A1, replace) ylabel(0(0.2)1) xlabel(0(8)48) ytitle("EQ-5D index, baseline") mcolor(brown) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit carer_eq5d_score0 als_score0, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+twoway (scatter carer_eq5d_score1 als_score1, name(B1, replace) ylabel(0(0.2)1) xlabel(0(8)48) ytitle("EQ-5D index, 6 months") mcolor(brown) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit carer_eq5d_score1 als_score1, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+twoway (scatter carer_eq5d_score2 als_score2, name(C1, replace) ylabel(0(0.2)1) xlabel(0(8)48) ytitle("EQ-5D index, 9 months")  mcolor(brown) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit carer_eq5d_score2 als_score2, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+
+* EQ-VAS
+twoway (scatter carer_eq_vas_score0 als_score0, name(A2, replace) ylabel(0(20)100) xlabel(0(8)48) ytitle("EQ-VAS, baseline") mcolor(sienna) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit carer_eq_vas_score0 als_score0, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+twoway (scatter carer_eq_vas_score1 als_score1, name(B2, replace) ylabel(0(20)100) xlabel(0(8)48) ytitle("EQ-VAS at 6 months") mcolor(sienna) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit carer_eq_vas_score1 als_score1, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+twoway (scatter carer_eq_vas_score2 als_score2, name(C2, replace) ylabel(0(20)100) xlabel(0(8)48) ytitle("EQ-VAS, 9 months") mcolor(sienna) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit carer_eq_vas_score2 als_score2, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+
+* ZBI
+twoway (scatter zarit_score0 als_score0, name(A3, replace) ylabel(0(16)88) xlabel(0(8)48) ytitle("ZBI score, baseline") mcolor(emerald) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit zarit_score0 als_score0, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+twoway (scatter zarit_score1 als_score1, name(B3, replace) ylabel(0(16)88) xlabel(0(8)48) ytitle("ZBI score, 6 months") mcolor(emerald) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit zarit_score1 als_score1, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+twoway (scatter zarit_score2 als_score2, name(C3, replace) ylabel(0(16)88) xlabel(0(8)48) ytitle("ZBI score, 6 months") mcolor(emerald) msize(small) msymbol(circle) mfcolor(white) mlwidth(0.4) legend(off)) (lfit zarit_score2 als_score2, legend(off)), ysc(titlegap(-0.5)) nodraw
+
+* Combined
+graph combine A1 B1 C1 A2 B2 C2 A3 B3 C3, rows(3) xsize(8) ysize(7) iscale(0.6) imargin(0 3 1 1)
+graph export output/figures/outcome-als-frs.png, width(8000) height(7000) replace
+}
+
+
+
+
+**# T-tests comparing outcomes and change in scores
 frame change default //using the default frame
 
 * ZBI score
@@ -114,6 +150,25 @@ pwcorr carer_eq5d_scoreD carer_eq_vas_scoreD, obs sig
 }
 
 
+
+**# Exploring CSRI variables
+pwcorr csri_equip csri_home csri_inpat csri_outpat csri_psych, sig
+
+
+
+
+// EQ5D Preferred model (below)
+reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_psychol_score mq_exist_score, vce(cluster screening)
+ereturn list r2_a  //0.120
+
+// EQ5D add csri_inpat
+// Only Zarit significant as before; but R2 reduces
+reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_psychol_score mq_exist_score csri_equip, vce(cluster screening)
+ereturn list r2_a //0.117
+
+
+
+
 //ssc install estout, replace
 
 
@@ -127,7 +182,7 @@ frame change pooledLong // change to long frame
 
 * Create list of independent variables (Pooled data)
 cap vl drop varZarit
-vl create varZarit = (calc_age_c carer_female carer_employed carer_university rel2ppt years_care caring_average carer_eq5d_100 carer_mobility carer_self_care carer_usual_activ carer_pain carer_anxiety als_score prebase_det_tert oth_anydx_yn ppt_numdx mq_psychol_score mq_exist_score mhads_anx_score mhads_dep_score rand_arm participant_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_pain participant_anxiety)
+vl create varZarit = (calc_age_c carer_female carer_employed carer_university rel2ppt years_care caring_average carer_eq5d_100 carer_mobility carer_self_care carer_usual_activ carer_pain carer_anxiety als_score prebase_det_tert oth_anydx_yn ppt_numdx mq_psychol_score mq_exist_score mhads_anx_score mhads_dep_score rand_arm participant_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_pain participant_anxiety csri_equip csri_home csri_inpat csri_outpat csri_psych)
 
 * Run univariate OLS regression
 
@@ -144,22 +199,8 @@ collect style cell result, halign(center)
 }
 collect layout (coleq#colname) (result[_r_b _r_ci _r_p])
 
-* Strategy
-
-
-
-// The residuals will not be independent since we have multiple observations from one individual. We specify vce(cluster id) to treat only observations with different person ids as truly independent
-
-//Note to self: Interpreting 95% CI. If the data collection were repeated (on caregivers sampled the same way as in the original sample), and if we were to refit our regression model, 95% of the time we would expect the estimated coefficient on varname to be in the range [lower,upper].
-
-// ROBUSTNESS add eq5d score in univariate regression
-
 
 ** Multivariate OLS regression (ZBI, Pooled data)
-// Add all carer background variables: calc_age_c carer_female carer_university carer_employed 
-// Add patient functional status + significant: als_score oth_mental_yn mhads_anx_score mhads_dep_score
-// Add caregiving context: (years_care caring_averageBin) (eq5d carer_usual_activ carer_pain carer_anxiety)  rel2ppt because sig
-// interaction between carer_rel and rel2ppt - dropped carer_rel
 
 quietly{
 capture frame change pooledLong // use long frame
@@ -167,20 +208,20 @@ capture frame change pooledLong // use long frame
 eststo clear //clear stored estimates
 
 * 
-qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety, vce(cluster screening)
+qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety csri_equip csri_outpat, vce(cluster screening)
 
-qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_eq5d_100, vce(cluster screening)
+qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score carer_eq5d_100 csri_equip csri_outpat, vce(cluster screening)
 
-qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ, vce(cluster screening)
+qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ csri_equip csri_outpat, vce(cluster screening)
 
-qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety participant_eq5d_100, vce(cluster screening)
+qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt mq_psychol_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ csri_equip csri_outpat, vce(cluster screening) // Preferred model
 
-qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ, vce(cluster screening)
+qui eststo: reg zarit_score calc_age_c carer_female carer_employed carer_university 1.rel2ppt mq_psychol_score carer_usual_activ carer_pain carer_anxiety participant_eq5d_100 csri_equip csri_outpat, vce(cluster screening)
 }
 
-esttab, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_100  participant_mobility participant_self_care participant_usual_activ participant_eq5d_100) nomtitles
+esttab, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_100  participant_mobility participant_self_care participant_usual_activ participant_eq5d_100 csri_equip csri_outpat) nomtitles
 
-esttab using example.tex, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_eq5d_100) nomtitles replace
+esttab using example.tex, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_eq5d_100 csri_equip csri_outpat) nomtitles replace
 
 
 * Check independence
@@ -205,28 +246,28 @@ esttab using example.tex, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(
 
 
 
-// * Run univariate Beta regression
-//
-// quietly{
-// capture frame change pooledLong // use long frame
-//
-// eststo clear //clear stored estimates
-//
-// * 
-// qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety if zarit_prop > 0, vce(cluster screening)
-//
-// qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_eq5d_score if zarit_prop > 0, vce(cluster screening)
-//
-// qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ if zarit_prop > 0, vce(cluster screening)
-//
-// qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety participant_eq5d_score if zarit_prop > 0, vce(cluster screening)
-//
-// qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ if zarit_prop > 0, vce(cluster screening)
-// }
-//
-// esttab, label varwidth(32) aic bic p nostar nocon cells(`b p') keep(als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_score  participant_mobility participant_self_care participant_usual_activ participant_eq5d_score) nomtitles
-//
-// esttab using example.tex, label varwidth(32) aic bic p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_score participant_mobility participant_self_care participant_usual_activ participant_eq5d_score) nomtitles replace
+** Multivariate Beta regression (ZBI, Pooled data)
+
+quietly{
+capture frame change pooledLong // use long frame
+
+eststo clear //clear stored estimates
+
+* 
+qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score mq_exist_score carer_usual_activ carer_pain carer_anxiety csri_equip csri_outpat if zarit_prop>0, vce(cluster screening)
+
+qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score carer_eq5d_100 csri_equip csri_outpat if zarit_prop>0, vce(cluster screening)
+
+qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt als_score mq_psychol_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ csri_equip csri_outpat if zarit_prop>0, vce(cluster screening)
+
+qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt mq_psychol_score carer_usual_activ carer_pain carer_anxiety participant_mobility participant_self_care participant_usual_activ csri_equip csri_outpat if zarit_prop>0, vce(cluster screening) // Preferred model
+
+qui eststo: betareg zarit_prop calc_age_c carer_female carer_employed carer_university 1.rel2ppt mq_psychol_score carer_usual_activ carer_pain carer_anxiety participant_eq5d_100 csri_equip csri_outpat if zarit_prop>0, vce(cluster screening)
+}
+
+esttab, label varwidth(32) aic bic p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_100  participant_mobility participant_self_care participant_usual_activ participant_eq5d_100 csri_equip csri_outpat) nomtitles
+
+esttab using example.tex, label varwidth(32)aic bic p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score carer_usual_activ carer_pain carer_anxiety carer_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_eq5d_100 csri_equip csri_outpat) nomtitles replace
 
 
 
@@ -240,7 +281,7 @@ frame change pooledLong // change to long frame
 
 * Create list of independent variables (Pooled data)
 cap vl drop varEQ5D
-vl create varEQ5D = (calc_age_c carer_female carer_employed carer_university rel2ppt years_care caring_average zarit_score als_score prebase_det_tert oth_anydx_yn ppt_numdx mq_psychol_score mq_exist_score mhads_anx_score mhads_dep_score rand_arm participant_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_pain participant_anxiety)
+vl create varEQ5D = (calc_age_c carer_female carer_employed carer_university rel2ppt years_care caring_average zarit_score als_score prebase_det_tert oth_anydx_yn ppt_numdx mq_psychol_score mq_exist_score mhads_anx_score mhads_dep_score rand_arm participant_eq5d_100 participant_mobility participant_self_care participant_usual_activ participant_pain participant_anxiety csri_equip csri_home csri_inpat csri_outpat csri_psych)
 
 * Run univariate OLS regression
 collect clear
@@ -264,21 +305,21 @@ capture frame change pooledLong // use long frame
 
 eststo clear //clear stored estimates
 
-* 
-qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_psychol_score mq_exist_score, vce(cluster screening)
+qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_exist_score csri_equip csri_outpat participant_self_care participant_usual_activ participant_pain participant_anxiety, vce(cluster screening)
 
-qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_psychol_score mq_exist_score, vce(cluster screening)
+qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score  mq_exist_score csri_equip csri_outpat participant_self_care participant_usual_activ participant_pain participant_anxiety, vce(cluster screening)
 
-qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_psychol_score mq_exist_score participant_self_care participant_usual_activ, vce(cluster screening)
+qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score  csri_equip csri_outpat participant_self_care participant_usual_activ participant_pain participant_anxiety, vce(cluster screening)
 
-qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score mq_psychol_score mq_exist_score participant_eq5d_100, vce(cluster screening)
+qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score csri_equip csri_outpat, vce(cluster screening)
 
-qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score als_score participant_self_care participant_usual_activ, vce(cluster screening)
+qui eststo: reg carer_eq5d_100 calc_age_c carer_female carer_employed carer_university 1.rel2ppt zarit_score  participant_self_care participant_usual_activ participant_pain participant_anxiety, vce(cluster screening)
+
 }
 
-esttab, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score mq_exist_score  participant_self_care participant_usual_activ participant_eq5d_100 zarit_score) nomtitles
+esttab, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(zarit_score als_score mq_exist_score csri_equip csri_outpat participant_self_care participant_usual_activ participant_pain participant_anxiety) nomtitles
 
-esttab using example.tex, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(als_score mq_psychol_score mq_exist_score  participant_self_care participant_usual_activ participant_eq5d_100 zarit_score) nomtitles replace
+esttab using example.tex, label varwidth(32) r2 ar2 p nostar nocon cells(`b(fmt(2)) p(fmt(3))') keep(zarit_score als_score mq_exist_score csri_equip csri_outpat participant_self_care participant_usual_activ participant_pain participant_anxiety) nomtitles replace
 
 
 
@@ -362,7 +403,6 @@ pwcorr als_score0 zarit_score0, sig obs
 
 /// What does the graph below tell?
 set scheme stmono2
-
 scatter carer_eq5d_scoreD zarit_scoreD
 graph export output/figures/zarit-eq5d-scoreD.png, width(6000) height(4000) replace
 

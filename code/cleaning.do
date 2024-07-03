@@ -21,10 +21,18 @@ lab var relationship "Patient is married/partnership"
 lab var carer_relationship "Caregiver is married/partnership"
 lab values carer_relationship yesno
 
+* Carer relationship with patient (categorical)
+gen rel2pptCat = rel2ppt
+recode rel2pptCat 3/7 = 3
+lab define rel2pptCat 1 "Spouse/partner" 2 "Child" 3 "Other family/friend", replace
+lab values rel2pptCat rel2pptCat
+lab var rel2pptCat "Relationship with patient"
+
 * Carer relationship with patient
 lab var rel2ppt "Relationship with patient"
 recode rel2ppt (1/2 = 1) (3/7 = 2)
 lab define rel2ppt 1 "Spouse/partner/child" 2 "Other family/friend", replace
+lab values rel2ppt rel2ppt
 
 * Employment status of carer and patient
 gen ppt_employed   = (occ==1 | occ==2) if !missing(occ)
@@ -97,21 +105,21 @@ gen carer_eq5d_scoreD = (carer_eq5d_score0) - (carer_eq5d_score2)
 lab var carer_eq5d_scoreD "Change in EQ-5D between baseline and 9 months"
 
 * ALSFRS scores
-lab var als_score0 "ALSFRS-R score (0–48)"
-lab var als_score1 "ALSFRS-R score (0–48)"
-lab var als_score2 "ALSFRS-R score (0–48)"
+lab var als_score0 "ALSFRS-R score (0-48)"
+lab var als_score1 "ALSFRS-R score (0-48)"
+lab var als_score2 "ALSFRS-R score (0-48)"
 
-lab var carer_eq_vas_score0 "EQ-VAS score (0–100)"
-lab var carer_eq_vas_score1 "EQ-VAS score (0–100)"
-lab var carer_eq_vas_score2 "EQ-VAS score (0–100)"
+lab var carer_eq_vas_score0 "EQ-VAS score (0-100)"
+lab var carer_eq_vas_score1 "EQ-VAS score (0-100)"
+lab var carer_eq_vas_score2 "EQ-VAS score (0-100)"
 
-lab var carer_eq5d_score0 "EQ-5D index score (0–1)"
-lab var carer_eq5d_score1 "EQ-5D index score (0–1)"
-lab var carer_eq5d_score2 "EQ-5D index score (0–1)"
+lab var carer_eq5d_score0 "EQ-5D index score (0-1)"
+lab var carer_eq5d_score1 "EQ-5D index score (0-1)"
+lab var carer_eq5d_score2 "EQ-5D index score (0-1)"
 
-lab var zarit_score0 "ZBI score (0–88)"
-lab var zarit_score1 "ZBI score (0–88)"
-lab var zarit_score2 "ZBI score (0–88)"
+lab var zarit_score0 "ZBI score (0-88)"
+lab var zarit_score1 "ZBI score (0-88)"
+lab var zarit_score2 "ZBI score (0-88)"
 
 lab var stage0 "King's stage"
 lab var stage1 "King's stage"
@@ -146,6 +154,10 @@ gen mhads_dep_scoreBin0 = (mhads_dep_score0 >= 5) if !missing(mhads_dep_score0)
 gen mhads_dep_scoreBin1 = (mhads_dep_score1 >= 5) if !missing(mhads_dep_score1)
 gen mhads_dep_scoreBin2 = (mhads_dep_score2 >= 5) if !missing(mhads_dep_score2)
 
+lab var mq_psychol_score0  "MQOL psychological (0-10)"
+lab var mq_exist_score0    "MQOL existential (0-10)"
+lab var mhads_anx_score0   "MHADS anxiety (0-18)"
+lab var mhads_dep_score0   "MHADS depression (0-18)"
 
 
 * Drop if missing baseline variables
@@ -154,7 +166,8 @@ drop if missing(zarit_score0) | missing(carer_eq_vas_score0) | missing(carer_eq5
 * Drop one influential observation where EQ-5D score was negative but EQ-VAS score was high
 drop if carer_eq5d_score0 < 0 | carer_eq5d_score0 < 0 | carer_eq5d_score2 < 0
 
-
+* Drop variables not needed
+cap drop zb_* act_* alsfrs_* sess_* pp_* aaq_* stts_* hads_* *complete* *_date*
 
 
 **# Create pooledLong frame (long data format)
@@ -175,11 +188,11 @@ lab var carer_anxiety     "Carer EQ-5D anxiety/depression"
 lab var zarit_score       "ZBI score (0-88)"
 lab var zarit_prop        "ZBI score scaled (0-1)"
 lab var carer_eq5d_score  "Carer EQ-5D index score"
-lab var als_score         "ALSFRS-Revised (0–48)"
-lab var mq_psychol_score  "MQOL psychological (0–10)"
-lab var mq_exist_score    "MQOL existential (0–10)"
-lab var mhads_anx_score   "Modified-HADS anxiety (0–18)"
-lab var mhads_dep_score   "Modified-HADS depression (0–18)"
+lab var als_score         "ALSFRS-Revised (0-48)"
+lab var mq_psychol_score  "MQOL psychological (0-10)"
+lab var mq_exist_score    "MQOL existential (0-10)"
+lab var mhads_anx_score   "MHADS anxiety (0-18)"
+lab var mhads_dep_score   "MHADS depression (0-18)"
 
 lab var participant_mobility    "Patient EQ-5D mobility"
 lab var participant_self_care   "Patient EQ-5D self-care"
@@ -209,5 +222,81 @@ lab define TIMEPOINT 0 "Baseline" 1 "6 months" 2 "9 months"
 lab values time TIMEPOINT
 
 
-frame change default
+
+**# CSRI data cleaning
+cap frame create csri
+cap frame change csri
+
+use "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/csri_equip.dta", clear
+keep screening event_name csri_equip
+
+merge m:m screening using "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/csri_home.dta"
+rename csri_adapt csri_home
+keep screening event_name csri_equip csri_home
+
+merge m:m screening using "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/csri_inpatient.dta"
+rename csri_inpat_service csri_inpat
+keep screening event_name csri_equip csri_home csri_inpat
+
+merge m:m screening using "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/csri_outpatient.dta"
+rename csri_outpat_service csri_outpat
+keep screening event_name csri_equip csri_home csri_inpat csri_outpat
+
+merge m:m screening using "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/csri_psych.dta"
+rename csri_therp csri_psych
+keep screening event_name csri_equip csri_home csri_inpat csri_outpat csri_psych
+
+merge m:m screening using "/Volumes/HAR_WG/WG/WELLCOME_COMMEND/data/csri_service_use.dta"
+rename csri_service_name csri_service
+keep screening event_name csri_equip csri_home csri_inpat csri_outpat csri_psych csri_service
+
+//drop if event_name == "9 months"
+//drop event_name
+
+label drop _all
+
+foreach var of varlist csri* {
+    replace `var' = 1 if !missing(`var')
+		replace `var' = 0 if  missing(`var')
+}
+
+//cap frame change csri
+
+
+// collapse (sum) csri*, by(screening)
+// format csri* %10.0g
+// cap frame change pooledLong
+// frlink m:1 screening, frame(csri)
+// frget csri*, from(csri)
+
+collapse (sum) csri*, by(screening event_name)
+
+replace event_name = "0" if event_name == "Baseline"
+replace event_name = "1" if event_name == "6 months"
+replace event_name = "2" if event_name == "9 months"
+destring event_name, replace
+
+
+foreach var of varlist csri_* {
+	gen `var'Bin = `var' > 0
+}
+
+rename event_name timepoint
+
+cap frame change pooledLong
+frlink m:1 screening timepoint, frame(csri)
+frget csri*, from(csri)
+
+format csri* %12.0g
+
+
+lab var csri_equip   "Received equipment"
+lab var csri_home    "Had home adaptations"
+lab var csri_inpat   "Received inpatient care"
+lab var csri_outpat  "Received outpatient care"
+lab var csri_psych   "Had psychological therapy"
+lab var csri_service "Mental health service"
+
+
+
 }
